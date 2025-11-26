@@ -14,16 +14,19 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         --ip) IP="$2"; shift 2 ;;
         --path) REMOTE_PATH="$2"; shift 2 ;;
-        --user) REMOTE_USER="$2"; shift 2 ;;  
+        --user) REMOTE_USER="$2"; shift 2 ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
 
-BUNDLE="build/linux/arm64/release/bundle"
+# PATHS
+RAW_BUNDLE="build/linux/arm64/release/bundle"
+SAFE_BUNDLE="pi-release"
 
 function do_build() {
     echo "🏗️  Building Flutter ARM64 (Docker)..."
 
+    # 1. Build inside Docker
     docker run --rm \
       --platform linux/arm64 \
       -v "$PWD":/app \
@@ -39,10 +42,25 @@ function do_build() {
         flutter build linux --release
       "
 
+    # 2. Fix Permissions (Claim files back from root)
     echo "🔧 Fixing permissions..."
     sudo chown -R $(whoami):$(whoami) .
 
-    echo "✅ Build complete."
+    # 3. Move Artifacts to Safe Harbor
+    echo "📦 Backing up build to '$SAFE_BUNDLE/'..."
+    rm -rf "$SAFE_BUNDLE"
+    mkdir -p "$SAFE_BUNDLE"
+    cp -r "$RAW_BUNDLE"/* "$SAFE_BUNDLE"/
+
+    # 4. HOST CLEANUP
+    echo "🧹 Cleaning host environment for local debugging..."
+    
+    flutter clean > /dev/null
+    
+    flutter pub get > /dev/null
+
+    echo "✅ Build saved to '$SAFE_BUNDLE/'."
+    echo "✨ Project is clean and ready!"
 }
 
 function do_deploy() {
@@ -51,9 +69,15 @@ function do_deploy() {
         exit 1
     fi
 
-    echo "🚀 Deploying to $REMOTE_USER@$IP..."
+    if [ ! -d "$SAFE_BUNDLE" ]; then
+        echo "❌ No Pi build found in '$SAFE_BUNDLE/'."
+        echo "   Please run 'flutter-pi build' first."
+        exit 1
+    fi
+
+    echo "🚀 Deploying from '$SAFE_BUNDLE' to $REMOTE_USER@$IP..."
     ssh "$REMOTE_USER@$IP" "mkdir -p $REMOTE_PATH"
-    rsync -avz --delete "$BUNDLE/" "$REMOTE_USER@$IP:$REMOTE_PATH/"
+    rsync -avz --delete "$SAFE_BUNDLE/" "$REMOTE_USER@$IP:$REMOTE_PATH/"
     echo "✅ Deploy complete."
 }
 
