@@ -12,17 +12,23 @@ A universal toolchain to build, deploy, and run **Flutter ARM64 apps for Raspber
 - Clean CLI:
 
 flutter-pi build
+
 flutter-pi deploy --ip 192.168.1.10 --path /home/pi/app
+
 flutter-pi run --ip 192.168.1.10 --path /home/pi/app
+
 flutter-pi build-deploy --ip ... --path ...
 
 ---
 
 ## 🛠 Installation
-
+```
 git clone https://github.com/huhFahad/flutter-pi-toolchain.git
+
 cd flutter-pi-toolchain
+
 ./install.sh
+```
 
 Logout & login once (Docker requirement).
 
@@ -58,6 +64,7 @@ To avoid typing your password multiple times, copy your SSH key to the Pi:
 
 ```bash
 ssh-copy-id pi@192.168.1.XX
+```
 
 ---
 
