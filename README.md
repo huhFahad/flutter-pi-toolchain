@@ -53,7 +53,7 @@ flutter-pi build-deploy --ip 192.168.1.50 --path /home/pi/app
 ## 📁 Built Files
 
 Located in:
-build/linux/arm64/release/bundle/
+pi-release/
 
 Copying this folder to the Pi is enough to run the app.
 
