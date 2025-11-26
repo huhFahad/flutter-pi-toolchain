@@ -12,21 +12,21 @@ RUN apt-get update && apt-get install -y \
     curl git unzip xz-utils zip \
     libglu1-mesa libgtk-3-dev \
     clang cmake ninja-build pkg-config \
-    liblzma-dev \
+    liblzma-dev lld build-essential \
     && apt-get clean
 
-# Install Flutter (ARM64)
+# Install Flutter (Stable)
 RUN git clone https://github.com/flutter/flutter.git -b stable /opt/flutter
 
 # Add Flutter + Dart to PATH
 ENV PATH="/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:${PATH}"
 
-# Pre-cache Linux desktop + ARM artifacts
+# Pre-cache Linux desktop artifacts
 RUN flutter config --enable-linux-desktop && \
-    flutter precache --linux --linux-arm64
+    flutter precache --linux
+
+# Fixes "fatal: detected dubious ownership in repository" error
+RUN git config --global --add safe.directory /app
 
 # Show version for debugging
 RUN flutter --version
-
-RUN git config --global --add safe.directory /app
-

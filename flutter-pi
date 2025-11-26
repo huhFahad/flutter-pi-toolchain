@@ -7,32 +7,40 @@ shift || true
 # Defaults
 IP=""
 REMOTE_PATH=""
-USER="pi"  # Default user
+REMOTE_USER="pi"
 
 # Parse args
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --ip) IP="$2"; shift 2 ;;
         --path) REMOTE_PATH="$2"; shift 2 ;;
-        --user) USER="$2"; shift 2 ;; # Added user flag
+        --user) REMOTE_USER="$2"; shift 2 ;;  
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
 
-# Standard Flutter Linux Build Path
 BUNDLE="build/linux/arm64/release/bundle"
 
 function do_build() {
     echo "🏗️  Building Flutter ARM64 (Docker)..."
-    
-    # CHANGE: Mounted to /app to match Dockerfile safe.directory
-    # CHANGE: Added --platform to force QEMU usage
+
     docker run --rm \
       --platform linux/arm64 \
       -v "$PWD":/app \
       -w /app \
       flutter-arm64 \
-      flutter build linux --release
+      /bin/bash -c "
+        git config --global --add safe.directory /app && \
+        echo '🧹 Cleaning (Container)...' && \
+        flutter clean && \
+        echo '📦 Fetching packages (Container)...' && \
+        flutter pub get && \
+        echo '🔨 Compiling...' && \
+        flutter build linux --release
+      "
+
+    echo "🔧 Fixing permissions..."
+    sudo chown -R $(whoami):$(whoami) .
 
     echo "✅ Build complete."
 }
@@ -43,14 +51,9 @@ function do_deploy() {
         exit 1
     fi
 
-    echo "🚀 Deploying to $USER@$IP..."
-
-    # Ensure remote folder exists
-    ssh "$USER@$IP" "mkdir -p $REMOTE_PATH"
-    
-    # Sync files
-    rsync -avz --delete "$BUNDLE/" "$USER@$IP:$REMOTE_PATH/"
-
+    echo "🚀 Deploying to $REMOTE_USER@$IP..."
+    ssh "$REMOTE_USER@$IP" "mkdir -p $REMOTE_PATH"
+    rsync -avz --delete "$BUNDLE/" "$REMOTE_USER@$IP:$REMOTE_PATH/"
     echo "✅ Deploy complete."
 }
 
@@ -60,17 +63,8 @@ function do_run() {
         exit 1
     fi
 
-    # CHANGE: Smarter executable detection (finds the one with no extension)
-    # We run a remote command to find the executable file in the directory
-    EXEC_CMD="find $REMOTE_PATH -maxdepth 1 -type f ! -name '*.*' -delete ; ls $REMOTE_PATH | head -n 1" 
-    
-    # Actually, simpler approach: The executable name usually matches the folder name or project name. 
-    # Let's rely on finding the only executable file that isn't a .so
-    
     echo "🖥️  Running app on Pi..."
-    
-    # SSH command to find executable and run it
-    ssh "$USER@$IP" "cd $REMOTE_PATH && \
+    ssh "$REMOTE_USER@$IP" "cd $REMOTE_PATH && \
     EXEC=\$(find . -maxdepth 1 -type f -executable ! -name '*.so' | head -n 1) && \
     echo \"Starting \$EXEC...\" && \
     export DISPLAY=:0 && \

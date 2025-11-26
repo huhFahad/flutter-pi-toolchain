@@ -16,19 +16,13 @@ flutter-pi deploy --ip 192.168.1.10 --path /home/pi/app
 flutter-pi run --ip 192.168.1.10 --path /home/pi/app
 flutter-pi build-deploy --ip ... --path ...
 
-yaml
-Copy code
-
 ---
 
 ## 🛠 Installation
 
-git clone <your-repo-url>
+git clone https://github.com/huhFahad/flutter-pi-toolchain.git
 cd flutter-pi-toolchain
 ./install.sh
-
-yaml
-Copy code
 
 Logout & login once (Docker requirement).
 
@@ -39,26 +33,14 @@ Logout & login once (Docker requirement).
 ### Build
 flutter-pi build
 
-shell
-Copy code
-
 ### Deploy
 flutter-pi deploy --ip 192.168.1.50 --path /home/pi/app
-
-shell
-Copy code
 
 ### Run
 flutter-pi run --ip 192.168.1.50 --path /home/pi/app
 
-shell
-Copy code
-
 ### Build + Deploy
 flutter-pi build-deploy --ip 192.168.1.50 --path /home/pi/app
-
-yaml
-Copy code
 
 ---
 
@@ -66,9 +48,6 @@ Copy code
 
 Located in:
 build/linux/arm64/release/bundle/
-
-yaml
-Copy code
 
 Copying this folder to the Pi is enough to run the app.
 
