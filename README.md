@@ -6,61 +6,70 @@ A universal toolchain to build, deploy, and run **Flutter ARM64 apps for Raspber
 
 ## 🚀 Features
 
-- Build Linux ARM64 Flutter apps on x86 PCs  
-- Zero Flutter installation required on host  
-- Works on all Pis (Zero2, 3, 4, 5)  
-- Clean CLI:
-
-flutter-pi build
-
-flutter-pi deploy --ip 192.168.1.10 --path /home/pi/app
-
-flutter-pi run --ip 192.168.1.10 --path /home/pi/app
-
-flutter-pi build-deploy --ip ... --path ...
+- 🏗️ **Cross-Compile:** Build Linux ARM64 Flutter apps on x86 PCs.
+- 🧹 **Auto-Clean:** Automatically cleans up the host environment so local debugging (`flutter run -d linux`) works immediately after building.
+- 📦 **Safe Harbor:** Saves the Pi build to a protected `pi-release/` folder.
+- 🔌 **Universal:** Works on all Pis (Zero 2, 3, 4, 5).
+- ⚡ **Zero Config:** No Flutter installation required on the host (uses Docker).
 
 ---
 
 ## 🛠 Installation
-```
+
+```bash
 git clone https://github.com/huhFahad/flutter-pi-toolchain.git
-
 cd flutter-pi-toolchain
-
 ./install.sh
 ```
 
-Logout & login once (Docker requirement).
+*Note: You must logout & login once after installation to update Docker permissions.*
 
 ---
 
 ## 📦 Usage
 
-### Build
+### 1. Build
+Compiles the app inside Docker, cleans up the mess, and saves the binary to `pi-release/`.
+```bash
 flutter-pi build
+```
 
-### Deploy
-flutter-pi deploy --ip 192.168.1.50 --path /home/pi/app
+### 2. Deploy
+Uploads the build to your Pi.
+**Note:** Use the full SSH target (user@ip).
+```bash
+flutter-pi deploy --target pi@192.168.1.50 --path /home/pi/my_app
+```
 
-### Run
-flutter-pi run --ip 192.168.1.50 --path /home/pi/app
+### 3. Run
+Runs the app remotely on the Pi's display.
+```bash
+flutter-pi run --target pi@192.168.1.50 --path /home/pi/my_app
+```
 
-### Build + Deploy
-flutter-pi build-deploy --ip 192.168.1.50 --path /home/pi/app
+### 4. Build + Deploy
+Do it all in one go.
+```bash
+flutter-pi build-deploy --target pi@192.168.1.50 --path /home/pi/my_app
+```
 
 ---
 
-## 📁 Built Files
+## ⚠️ Important Note on Paths
+When using the `--path` flag, **avoid using `~` (tilde) without quotes**, as your local PC will expand it to *your* home folder, not the Pi's.
 
-Located in:
-pi-release/
+**✅ Good:**
+- `--path /home/pi/apps/quiz_app` (Absolute path)
+- `--path '~/apps/quiz_app'` (Quoted relative path)
+- `--path apps/quiz_app` (Relative to user home)
 
-Copying this folder to the Pi is enough to run the app.
+**❌ Bad:**
+- `--path ~/apps/quiz_app` (This will try to create `/home/your-local-name/` on the Pi)
 
 ---
 
 ## 🔑 Setup Tip (Recommended)
-To avoid typing your password multiple times, copy your SSH key to the Pi:
+To avoid typing your password every time, copy your SSH key to the Pi:
 
 ```bash
 ssh-copy-id pi@192.168.1.XX

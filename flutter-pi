@@ -5,16 +5,14 @@ COMMAND="$1"
 shift || true
 
 # Defaults
-IP=""
+SSH_TARGET=""
 REMOTE_PATH=""
-REMOTE_USER="pi"
 
 # Parse args
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --ip) IP="$2"; shift 2 ;;
+        --target) SSH_TARGET="$2"; shift 2 ;;
         --path) REMOTE_PATH="$2"; shift 2 ;;
-        --user) REMOTE_USER="$2"; shift 2 ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
@@ -54,9 +52,7 @@ function do_build() {
 
     # 4. HOST CLEANUP
     echo "🧹 Cleaning host environment for local debugging..."
-    
     flutter clean > /dev/null
-    
     flutter pub get > /dev/null
 
     echo "✅ Build saved to '$SAFE_BUNDLE/'."
@@ -64,8 +60,8 @@ function do_build() {
 }
 
 function do_deploy() {
-    if [[ -z "$IP" || -z "$REMOTE_PATH" ]]; then
-        echo "❌ Usage: flutter-pi deploy --ip <ip> --path <folder> [--user <user>]"
+    if [[ -z "$SSH_TARGET" || -z "$REMOTE_PATH" ]]; then
+        echo "❌ Usage: flutter-pi deploy --target <user@ip> --path <folder>"
         exit 1
     fi
 
@@ -75,20 +71,25 @@ function do_deploy() {
         exit 1
     fi
 
-    echo "🚀 Deploying from '$SAFE_BUNDLE' to $REMOTE_USER@$IP..."
-    ssh "$REMOTE_USER@$IP" "mkdir -p $REMOTE_PATH"
-    rsync -avz --delete "$SAFE_BUNDLE/" "$REMOTE_USER@$IP:$REMOTE_PATH/"
+    echo "🚀 Deploying from '$SAFE_BUNDLE' to $SSH_TARGET..."
+
+    # Ensure remote folder exists
+    ssh "$SSH_TARGET" "mkdir -p $REMOTE_PATH"
+
+    # Sync files
+    rsync -avz --delete "$SAFE_BUNDLE/" "$SSH_TARGET:$REMOTE_PATH/"
+
     echo "✅ Deploy complete."
 }
 
 function do_run() {
-    if [[ -z "$IP" || -z "$REMOTE_PATH" ]]; then
-        echo "❌ Usage: flutter-pi run --ip <ip> --path <folder> [--user <user>]"
+    if [[ -z "$SSH_TARGET" || -z "$REMOTE_PATH" ]]; then
+        echo "❌ Usage: flutter-pi run --target <user@ip> --path <folder>"
         exit 1
     fi
 
     echo "🖥️  Running app on Pi..."
-    ssh "$REMOTE_USER@$IP" "cd $REMOTE_PATH && \
+    ssh "$SSH_TARGET" "cd $REMOTE_PATH && \
     EXEC=\$(find . -maxdepth 1 -type f -executable ! -name '*.so' | head -n 1) && \
     echo \"Starting \$EXEC...\" && \
     export DISPLAY=:0 && \
@@ -107,6 +108,10 @@ case $COMMAND in
     build-deploy) do_build_deploy ;;
     *)
         echo "Unknown command: $COMMAND"
+        echo "Usage:"
+        echo "  flutter-pi build"
+        echo "  flutter-pi deploy --target user@ip --path /home/user/app"
+        echo "  flutter-pi run    --target user@ip --path /home/user/app"
         exit 1
         ;;
 esac
