@@ -40,9 +40,10 @@ function do_build() {
         flutter build linux --release
       "
 
-    # 2. Fix Permissions (Claim files back from root)
+    # 2. Fix Permissions (SAFER METHOD)
+    # Only target specific build/cache folders, never the root '.'
     echo "🔧 Fixing permissions..."
-    sudo chown -R $(whoami):$(whoami) .
+    sudo chown -R $(whoami):$(whoami) build/ .dart_tool/ .flutter-plugins .flutter-plugins-dependencies 2>/dev/null || true
 
     # 3. Move Artifacts to Safe Harbor
     echo "📦 Backing up build to '$SAFE_BUNDLE/'..."
@@ -50,9 +51,10 @@ function do_build() {
     mkdir -p "$SAFE_BUNDLE"
     cp -r "$RAW_BUNDLE"/* "$SAFE_BUNDLE"/
 
-    # 4. HOST CLEANUP
-    echo "🧹 Cleaning host environment for local debugging..."
-    flutter clean > /dev/null
+    # 4. HOST CLEANUP (FASTER & SAFER)
+    # Instead of 'flutter clean' (slow), we just remove the conflicting config
+    echo "🧹 Resetting host environment for local debugging..."
+    rm -rf .dart_tool build
     flutter pub get > /dev/null
 
     echo "✅ Build saved to '$SAFE_BUNDLE/'."
@@ -68,6 +70,12 @@ function do_deploy() {
     if [ ! -d "$SAFE_BUNDLE" ]; then
         echo "❌ No Pi build found in '$SAFE_BUNDLE/'."
         echo "   Please run 'flutter-pi build' first."
+        exit 1
+    fi
+
+    # SAFETY CHECK: Prevent deleting root
+    if [[ "$REMOTE_PATH" == "/" || "$REMOTE_PATH" == "." ]]; then
+        echo "❌ DANGER: Refusing to deploy to root ($REMOTE_PATH)."
         exit 1
     fi
 
@@ -89,11 +97,19 @@ function do_run() {
     fi
 
     echo "🖥️  Running app on Pi..."
+
+    # 1. Find the executable (ELF Binary check)
+    # 2. Kill existing instances
+    # 3. Run new instance
     ssh "$SSH_TARGET" "cd $REMOTE_PATH && \
-    EXEC=\$(find . -maxdepth 1 -type f -executable ! -name '*.so' | head -n 1) && \
-    echo \"Starting \$EXEC...\" && \
+    EXEC=\$(find . -maxdepth 1 -type f -exec sh -c 'head -c 4 \"\$1\" | grep -q \"ELF\"' _ {} \; -print | head -n 1) && \
+    if [ -z \"\$EXEC\" ]; then echo '❌ No executable found!'; exit 1; fi && \
+    echo \"Found executable: \$EXEC\" && \
+    echo \"Killing old instances...\" && \
+    pkill -f \"\$EXEC\" || true && \
+    echo \"Starting new instance...\" && \
     export DISPLAY=:0 && \
-    nohup \$EXEC >/dev/null 2>&1 &"
+    nohup \"\$EXEC\" >/dev/null 2>&1 &"
 }
 
 function do_build_deploy() {
@@ -101,17 +117,33 @@ function do_build_deploy() {
     do_deploy
 }
 
+function do_deploy_run() {
+    do_deploy
+    do_run
+}
+
+function do_build_deploy_run() {
+    do_build
+    do_deploy
+    do_run
+}
+
 case $COMMAND in
     build) do_build ;;
     deploy) do_deploy ;;
     run) do_run ;;
     build-deploy) do_build_deploy ;;
+    deploy-run) do_deploy_run ;;
+    build-deploy-run) do_build_deploy_run ;;
     *)
         echo "Unknown command: $COMMAND"
         echo "Usage:"
         echo "  flutter-pi build"
-        echo "  flutter-pi deploy --target user@ip --path /home/user/app"
-        echo "  flutter-pi run    --target user@ip --path /home/user/app"
+        echo "  flutter-pi deploy           --target user@ip --path /path/to/app"
+        echo "  flutter-pi run              --target user@ip --path /path/to/app"
+        echo "  flutter-pi build-deploy     --target user@ip --path /path/to/app"
+        echo "  flutter-pi deploy-run       --target user@ip --path /path/to/app"
+        echo "  flutter-pi build-deploy-run --target user@ip --path /path/to/app"
         exit 1
         ;;
 esac
