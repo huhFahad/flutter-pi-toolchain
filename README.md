@@ -10,6 +10,7 @@ A universal toolchain to build, deploy, and run **Flutter ARM64 apps for Raspber
 - 🧹 **Auto-Clean:** Automatically cleans up the host environment so local debugging (`flutter run -d linux`) works immediately after building.
 - 📦 **Safe Harbor:** Saves the Pi build to a protected `pi-release/` folder.
 - 🔌 **Universal:** Works on all Pis (Zero 2, 3, 4, 5).
+- 🛡️ **Safety First:** Prevents accidental deployment to root (`/`) and auto-kills old app instances before starting new ones.
 - ⚡ **Zero Config:** No Flutter installation required on the host (uses Docker).
 
 ---
@@ -42,15 +43,23 @@ flutter-pi deploy --target pi@192.168.1.50 --path /home/pi/my_app
 ```
 
 ### 3. Run
-Runs the app remotely on the Pi's display.
+Runs the app remotely on the Pi's display (auto-kills previous instances).
 ```bash
 flutter-pi run --target pi@192.168.1.50 --path /home/pi/my_app
 ```
 
-### 4. Build + Deploy
-Do it all in one go.
+### 4. Combined Commands (Workflow Shortcuts)
+Automate the whole cycle in one command:
+
+| Command | Description |
+| :--- | :--- |
+| `build-deploy` | Builds locally, then uploads to Pi. |
+| `deploy-run` | Uploads existing build, then runs it. |
+| `build-deploy-run` | **The "Magic Button":** Builds, Deploys, and Runs instantly. |
+
+**Example:**
 ```bash
-flutter-pi build-deploy --target pi@192.168.1.50 --path /home/pi/my_app
+flutter-pi build-deploy-run --target pi@192.168.1.50 --path /home/pi/my_app
 ```
 
 ---
