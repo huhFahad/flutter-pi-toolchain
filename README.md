@@ -10,7 +10,6 @@ A universal toolchain to build, deploy, and run **Flutter ARM64 apps for Raspber
 - 🧹 **Auto-Clean:** Automatically cleans up the host environment so local debugging (`flutter run -d linux`) works immediately after building.
 - 📦 **Safe Harbor:** Saves the Pi build to a protected `pi-release/` folder.
 - 🔌 **Universal:** Works on all Pis (Zero 2, 3, 4, 5).
-- 🛡️ **Safety First:** Prevents accidental deployment to root (`/`) and auto-kills old app instances before starting new ones.
 - ⚡ **Zero Config:** No Flutter installation required on the host (uses Docker).
 
 ---
