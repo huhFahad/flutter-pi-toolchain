@@ -119,16 +119,29 @@ function do_run() {
 }
 
 function do_build_deploy() {
+    if [[ -z "$SSH_TARGET" || -z "$REMOTE_PATH" ]]; then
+        echo "❌ Usage: flutter-pi build-deploy --target <user@ip> --path <folder>"
+        exit 1
+    fi
+
     do_build
     do_deploy
 }
 
 function do_deploy_run() {
+    if [[ -z "$SSH_TARGET" || -z "$REMOTE_PATH" ]]; then
+        echo "❌ Usage: flutter-pi deploy-run --target <user@ip> --path <folder>"
+        exit 1
+    fi
     do_deploy
     do_run
 }
 
 function do_build_deploy_run() {
+    if [[ -z "$SSH_TARGET" || -z "$REMOTE_PATH" ]]; then
+        echo "❌ Usage: flutter-pi build-deploy-run --target <user@ip> --path <folder>"
+        exit 1
+    fi
     do_build
     do_deploy
     do_run
