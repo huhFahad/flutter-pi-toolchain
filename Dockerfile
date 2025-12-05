@@ -30,3 +30,7 @@ RUN git config --global --add safe.directory /app
 
 # Show version for debugging
 RUN flutter --version
+
+RUN flutter upgrade
+
+RUN flutter --version
