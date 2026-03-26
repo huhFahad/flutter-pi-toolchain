@@ -13,6 +13,16 @@ RUN apt-get update && apt-get install -y \
     libglu1-mesa libgtk-3-dev \
     clang cmake ninja-build pkg-config \
     liblzma-dev lld build-essential \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    gstreamer1.0-tools \
+    gstreamer1.0-alsa \
+    gstreamer1.0-pulseaudio \
     && apt-get clean
 
 # Install Flutter (Stable)
